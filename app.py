@@ -3,6 +3,17 @@ import pandas as pd
 from io import BytesIO
 import base64
 from pathlib import Path
+import os
+from datetime import datetime, timedelta
+from auth_config import (
+    authenticate_user,
+    is_account_locked,
+    get_lockout_time_remaining,
+    get_failed_attempts_count,
+    get_all_failed_attempts,
+    is_authorized,
+    MAX_FAILED_ATTEMPTS
+)
 
 # Page configuration
 st.set_page_config(
@@ -6100,9 +6111,139 @@ def to_excel_bytes_multiple_sheets(measure_results):
     output.seek(0)
     return output.getvalue()
 
-# Main UI
-st.markdown('<h1 class="main-header">🏥 Healthcare Measure Processor</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">Upload your CSV or Excel file and select one or more measures to process your healthcare data</p>', unsafe_allow_html=True)
+# ============================================================================
+# AUTHENTICATION SYSTEM
+# ============================================================================
+
+# Initialize session state for authentication
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+    st.session_state.user = None
+    st.session_state.role = None
+    st.session_state.remember_me = False
+
+def show_login_page():
+    """Display the login page."""
+    st.markdown("""
+    <style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+    }
+    .login-card {
+        background-color: white;
+        padding: 3rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 400px;
+        width: 100%;
+    }
+    .login-header {
+        text-align: center;
+        color: #1f77b4;
+        margin-bottom: 2rem;
+    }
+    .error-message {
+        background-color: #fee;
+        color: #c33;
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        border-left: 4px solid #c33;
+    }
+    .info-message {
+        background-color: #e3f2fd;
+        color: #1565c0;
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        border-left: 4px solid #1565c0;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Center the login form
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+        st.markdown('<h1 class="login-header">🏥 Healthcare Measure Processor</h1>', unsafe_allow_html=True)
+        st.markdown('<p style="text-align: center; color: #666; margin-bottom: 2rem;">Please sign in to continue</p>', unsafe_allow_html=True)
+        
+        # Login form
+        with st.form("login_form"):
+            username = st.text_input("Username", placeholder="Enter your username")
+            password = st.text_input("Password", type="password", placeholder="Enter your password")
+            remember_me = st.checkbox("Remember me", help="Keep me logged in for this session")
+            
+            login_button = st.form_submit_button("🔐 Sign In", use_container_width=True)
+            
+            if login_button:
+                if not username or not password:
+                    st.error("⚠️ Please enter both username and password")
+                else:
+                    # Check if account is locked
+                    if is_account_locked(username):
+                        remaining = get_lockout_time_remaining(username)
+                        if remaining:
+                            minutes = remaining // 60
+                            seconds = remaining % 60
+                            st.error(f"🔒 Account locked. Please try again in {minutes}m {seconds}s")
+                    else:
+                        # Try authentication
+                        user = authenticate_user(username, password)
+                        if user:
+                            st.session_state.authenticated = True
+                            st.session_state.user = user['username']
+                            st.session_state.role = user['role']
+                            st.session_state.remember_me = remember_me
+                            st.success("✅ Login successful!")
+                            st.rerun()
+                        else:
+                            attempts = get_failed_attempts_count(username)
+                            remaining_attempts = MAX_FAILED_ATTEMPTS - attempts
+                            if remaining_attempts > 0:
+                                st.error(f"❌ Invalid credentials. {remaining_attempts} attempt(s) remaining.")
+                            else:
+                                remaining = get_lockout_time_remaining(username)
+                                if remaining:
+                                    minutes = remaining // 60
+                                    seconds = remaining % 60
+                                    st.error(f"🔒 Account locked. Please try again in {minutes}m {seconds}s")
+        
+        st.markdown("---")
+        st.markdown('<p style="text-align: center; color: #999; font-size: 0.85rem;">Secure access required</p>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+def logout():
+    """Logout the current user."""
+    st.session_state.authenticated = False
+    st.session_state.user = None
+    st.session_state.role = None
+    st.session_state.remember_me = False
+    st.rerun()
+
+# Check authentication
+if not st.session_state.authenticated:
+    show_login_page()
+    st.stop()
+
+# ============================================================================
+# MAIN APPLICATION (Protected by Authentication)
+# ============================================================================
+
+# Header with user info and logout
+col_header1, col_header2, col_header3 = st.columns([2, 1, 1])
+with col_header1:
+    st.markdown('<h1 class="main-header">🏥 Healthcare Measure Processor</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Upload your CSV or Excel file and select one or more measures to process your healthcare data</p>', unsafe_allow_html=True)
+with col_header3:
+    st.markdown(f"<div style='text-align: right; padding-top: 1rem;'>", unsafe_allow_html=True)
+    st.markdown(f"**Logged in as:** {st.session_state.user} ({st.session_state.role})")
+    if st.button("🚪 Logout", use_container_width=True):
+        logout()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
@@ -6125,6 +6266,53 @@ with st.sidebar:
     **Measure 130**: CPT codes only  
     **Measure 001**: CPT + ICD codes required
     """)
+    
+    # Admin Security Panel (Admin only)
+    if st.session_state.role == 'admin':
+        st.markdown("---")
+        with st.expander("🔒 Security Panel (Admin Only)", expanded=False):
+            st.markdown("### Current Session")
+            st.info(f"**User:** {st.session_state.user}  \n**Role:** {st.session_state.role}")
+            
+            st.markdown("### Failed Login Attempts")
+            failed_attempts = get_all_failed_attempts()
+            if failed_attempts:
+                for username, data in failed_attempts.items():
+                    count = data.get('count', 0)
+                    lockout_until = data.get('lockout_until')
+                    if lockout_until:
+                        remaining = get_lockout_time_remaining(username)
+                        if remaining:
+                            minutes = remaining // 60
+                            seconds = remaining % 60
+                            st.warning(f"**{username}**: {count} attempts - Locked until {lockout_until.strftime('%H:%M:%S')} ({minutes}m {seconds}s remaining)")
+                        else:
+                            st.info(f"**{username}**: {count} attempts (lockout expired)")
+                    else:
+                        st.info(f"**{username}**: {count} failed attempts")
+            else:
+                st.success("No failed login attempts")
+            
+            st.markdown("### Credential Management")
+            st.markdown("""
+            **To rotate passwords:**
+            1. Run `python hash_password.py` to generate new hash
+            2. Update environment variables:
+               - `ADMIN_PASSWORD_HASH`
+               - `ADMIN_PASSWORD_SALT`
+            3. Restart the application
+            
+            **Environment Variables:**
+            - `ADMIN_USERNAME` - Admin username
+            - `ADMIN_PASSWORD_HASH` - Hashed password
+            - `ADMIN_PASSWORD_SALT` - Password salt
+            - `USER_USERNAME` - Regular user username (optional)
+            - `USER_PASSWORD_HASH` - User password hash (optional)
+            - `USER_PASSWORD_SALT` - User password salt (optional)
+            """)
+            
+            if st.button("🚪 Logout All Sessions", help="Clear all session data"):
+                logout()
 
 # Main content area
 col1, col2 = st.columns([1, 1])
