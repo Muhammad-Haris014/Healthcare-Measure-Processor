@@ -69,6 +69,25 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Measure 431 custom CPT lists
+PRIMARY_CPT_LIST = [
+    "99385", "99386", "99387",
+    "99395", "99396", "99397", "99401", "99402", "99403", "99404", "99411",
+    "99412", "99429", "G0438", "G0439"
+]
+
+DUPLICATE_CPT_LIST = [
+    "90791", "90792", "90832",
+    "90834", "90837", "90845", "92517", "92518", "92519", "92537", "92538", "92540",
+    "92541", "92542", "92544", "92545", "92546", "92548", "92549", "92550", "92552",
+    "92553", "92555", "92556", "92557", "92567", "92570", "92584", "92587", "92588",
+    "92620", "92622", "92625", "92626", "92650", "92651", "92652", "92653", "96156",
+    "96158", "97165", "97166", "97167", "97168", "97802", "97803", "97804", "98000",
+    "98001", "98002", "98003", "98004", "98005", "98006", "98007", "98008", "98009",
+    "98010", "98011", "98012", "98013", "98014", "98015", "98016", "99202", "99203",
+    "99204", "99205", "99212", "99213", "99214", "99215", "G0270", "G0271"
+]
+
 # Measure configurations
 MEASURE_CONFIGS = {
     "Measure 047": {
@@ -111,17 +130,23 @@ MEASURE_CONFIGS = {
     },
     "Measure 226": {
         "cpt_list": [
-            '90791', '90792', '90832', '90834', '90837', '90845', '92002', '92004', '92012',
-            '92014', '92521', '92522', '92523', '92524', '92540', '92557', '92622', '92625',
-            '96156', '96158', '97161', '97162', '97163', '97165', '97166', '97167', '97168',
-            '97802', '97803', '97804', '98000', '98001', '98002', '98003', '98004', '98005',
-            '98006', '98007', '98008', '98009', '98010', '98011', '98012', '98013', '98014',
-            '98015', '98016', '98980', '99024', '99202', '99203', '99204', '99205', '99212',
-            '99213', '99214', '99215', '99341', '99342', '99344', '99345', '99347', '99348',
-            '99349', '99350', '99421', '99422', '99423', '99457', 'G0270', 'G0271', 'G2250',
-            'G2251', 'G2252'
+            '99384' ,'99385' ,'99386' ,'99387' ,'99394' ,'99395', '99396', '99397', '99401',
+            '99402', '99403' ,'99404', '99411' ,'99412', '99429' ,'G0402' ,'G0438', 'G0439'
         ],
-        "requires_icd": False
+        "cpt_list_dup": [
+            "90791", "90792", "90832", "90834", "90837", "90845", "92002", "92004",
+            "92012", "92014", "92521", "92522", "92523", "92524", "92540", "92557",
+            "92622", "92625", "96156", "96158", "97161", "97162", "97163", "97165",
+            "97166", "97167", "97168", "97802", "97803", "97804", "98000", "98001",
+            "98002", "98003", "98004", "98005", "98006", "98007", "98008", "98009",
+            "98010", "98011", "98012", "98013", "98014", "98015", "98016", "98980",
+            "99024", "99202", "99203", "99204", "99205", "99212", "99213", "99214",
+            "99215", "99341", "99342", "99344", "99345", "99347", "99348", "99349",
+            "99350", "99421", "99422", "99423", "99457", "G0270", "G0271", "G2250",
+            "G2251", "G2252"
+        ],
+        "requires_icd": False,
+        "age_min": 18
     },
     "Measure 001": {
         "cpt_list": [
@@ -5884,6 +5909,12 @@ MEASURE_CONFIGS = {
                             ,
         "requires_icd": False  # Set to False if Measure 236 needs ONLY CPT (not ICD)
     },
+    "Measure 431": {
+        "cpt_list": PRIMARY_CPT_LIST,
+        "cpt_list_dup": DUPLICATE_CPT_LIST,
+        "requires_icd": False,
+        "age_min": 18
+    },
 }
 
 # Age rules (min/max) per measure
@@ -5891,6 +5922,7 @@ AGE_RULES = {
     "Measure 047": {"age_min": 65, "age_max": None},
     "Measure 130": {"age_min": None, "age_max": None},
     "Measure 001": {"age_min": 18, "age_max": 85},
+    "Measure 226": {"age_min": 18, "age_max": None},
     "Measure 222": {"age_min": 14, "age_max": None},
     "Measure 217": {"age_min": 14, "age_max": None},
     "Measure 218": {"age_min": 14, "age_max": None},
@@ -5920,6 +5952,7 @@ AGE_RULES = {
     "Measure 293": {"age_min": None, "age_max": None},
     "Measure 389": {"age_min": 18, "age_max": None},
     "Measure 374": {"age_min": None, "age_max": None},
+    "Measure 431": {"age_min": 18, "age_max": None},
 }
 
 # Inject age rules into MEASURE_CONFIGS
@@ -5941,6 +5974,13 @@ def has_matching_icd(cell, icd_list):
         return False
     codes = str(cell).split()
     return any(code.strip() in icd_list for code in codes)
+
+def get_age_column(df):
+    """Return the column name that represents age, ignoring case and surrounding whitespace."""
+    for col in df.columns:
+        if str(col).strip().upper() == "AGE":
+            return col
+    return None
 
 def clean_export_df(df):
     """Drop internal match helper columns before exporting."""
@@ -5964,6 +6004,72 @@ def process_measure_001(df, cpt_list, icd_list):
     df['ICD_MATCH'] = df['ICD'].apply(lambda x: has_matching_icd(x, icd_list))
     matched = df[(df['CPT_MATCH']) & (df['ICD_MATCH'])]
     return matched
+
+def process_measure_431(df):
+    """Process Measure 431 with dual CPT lists and duplicate-patient logic."""
+    df_clean = df.copy()
+    df_clean["CPT"] = df_clean["CPT"].astype(str).str.replace(r"[-,/]", " ", regex=True)
+    df_clean["CPT_CODES"] = df_clean["CPT"].apply(lambda x: str(x).split())
+
+    primary_set = set(PRIMARY_CPT_LIST)
+    duplicate_set = set(DUPLICATE_CPT_LIST)
+
+    matched = df_clean[df_clean["CPT_CODES"].apply(lambda codes: any(code in primary_set for code in codes))]
+    matched_dup = df_clean[df_clean["CPT_CODES"].apply(lambda codes: any(code in duplicate_set for code in codes))]
+    if "PATIENT NAME" in matched_dup.columns:
+        matched_dup = matched_dup[matched_dup["PATIENT NAME"].duplicated(keep=False)]
+
+    df3 = pd.concat([matched, matched_dup], ignore_index=True)
+
+    if "PATIENT NAME" in df3.columns:
+        df3 = df3.drop_duplicates(subset="PATIENT NAME")
+
+    age_col = get_age_column(df3)
+    if age_col:
+        age_values = pd.to_numeric(df3[age_col], errors="coerce")
+        df3 = df3[age_values >= 18]
+
+    if "CPT_CODES" in df3.columns:
+        df3 = df3.drop(columns=["CPT_CODES"])
+
+    return df3
+
+def process_measure_226(df):
+    """Process Measure 226 with dual CPT lists and duplicate-patient logic (same as Measure 431)."""
+    df = df.copy()
+
+    df1 = df.copy()
+    df["CPT"] = df["CPT"].astype(str)
+    df1["CPT"] = df1["CPT"].astype(str)
+
+    def extract_codes(cell):
+        cell = str(cell).replace("-", " ").replace(",", " ").replace("/", " ")
+        return cell.split()
+
+    def has_match(cell, cpt_set):
+        codes = extract_codes(cell)
+        return any(code in cpt_set for code in codes)
+
+    cpt_set = set(MEASURE_CONFIGS["Measure 226"]["cpt_list"])
+    cpt_set_dup = set(MEASURE_CONFIGS["Measure 226"]["cpt_list_dup"])
+
+    df["CPT_MATCH"] = df["CPT"].apply(lambda x: has_match(x, cpt_set))
+    df1["CPT_MATCH"] = df1["CPT"].apply(lambda x: has_match(x, cpt_set_dup))
+
+    matched = df[df["CPT_MATCH"]]
+    matched_dup = df1[df1["CPT_MATCH"]]
+
+    matched_dup = matched_dup[matched_dup["PATIENT NAME"].duplicated(keep=False)]
+
+    df3 = pd.concat([matched, matched_dup], ignore_index=True)
+
+    df3 = df3.drop_duplicates(subset="PATIENT NAME")
+
+    age_col = get_age_column(df3)
+    if age_col:
+        df3 = df3[df3[age_col] >= 18]
+
+    return df3
 
 def to_excel_bytes(df):
     """Convert DataFrame to Excel bytes"""
@@ -6068,7 +6174,7 @@ with col2:
     st.subheader("⚙️ Step 2: Select Measure(s)")
     measures = st.multiselect(
         "Choose one or more measures to process",
-        options=["Measure 047", "Measure 130", "Measure 226", "Measure 001", "Measure 222", "Measure 217", "Measure 218", "Measure 219", "Measure 220", "Measure 221", "Measure 238", "Measure 317", "Measure 277", "Measure 279","Measure 236","Measure 354","Measure 355","Measure 356","Measure 357","Measure 358","Measure 126","Measure 127","Measure 006","Measure 134","Measure 141","Measure 181","Measure 182","Measure 191","Measure 117","Measure 291","Measure 293","Measure 389","Measure 374"],
+        options=["Measure 047", "Measure 130", "Measure 226", "Measure 001", "Measure 222", "Measure 217", "Measure 218", "Measure 219", "Measure 220", "Measure 221", "Measure 238", "Measure 317", "Measure 277", "Measure 279","Measure 236","Measure 354","Measure 355","Measure 356","Measure 357","Measure 358","Measure 126","Measure 127","Measure 006","Measure 134","Measure 141","Measure 181","Measure 182","Measure 191","Measure 117","Measure 291","Measure 293","Measure 389","Measure 374","Measure 431"],
         help="Select one or more measure types to apply. Results will be exported to separate sheets in one Excel file."
     )
     
@@ -6106,10 +6212,19 @@ if df is not None:
             # Check if we need ICD column for any selected measure
             needs_icd = any(MEASURE_CONFIGS[m].get("requires_icd", False) for m in measures)
             required_cols = ['CPT']
+            if "Measure 431" in measures:
+                required_cols.append('PATIENT NAME')
+            if "Measure 226" in measures:
+                required_cols.append('PATIENT NAME')
             if needs_icd:
                 required_cols.append('ICD')
             
             missing_cols = [col for col in required_cols if col not in df.columns]
+            age_col_in_df = get_age_column(df)
+            if "Measure 431" in measures and not age_col_in_df:
+                missing_cols.append('AGE')
+            if "Measure 226" in measures and not age_col_in_df:
+                missing_cols.append('AGE')
             
             if missing_cols:
                 st.error(f"❌ Missing required columns: {', '.join(missing_cols)}")
@@ -6125,7 +6240,11 @@ if df is not None:
                             config = MEASURE_CONFIGS[measure]
                             
                             # Process based on measure type
-                            if config["requires_icd"]:
+                            if measure == "Measure 431":
+                                matched = process_measure_431(df)
+                            elif measure == "Measure 226":
+                                matched = process_measure_226(df)
+                            elif config["requires_icd"]:
                                 matched = process_measure_001(df, config['cpt_list'], config['icd_list'])
                             else:
                                 matched = process_measure_047_130(df, config['cpt_list'])
@@ -6133,8 +6252,9 @@ if df is not None:
                             # Apply age filtering when configured and AGE column exists
                             age_min = config.get("age_min")
                             age_max = config.get("age_max")
-                            if "AGE" in matched.columns and (age_min is not None or age_max is not None):
-                                age_values = pd.to_numeric(matched["AGE"], errors="coerce")
+                            age_col = get_age_column(matched)
+                            if age_col and (age_min is not None or age_max is not None):
+                                age_values = pd.to_numeric(matched[age_col], errors="coerce")
                                 age_condition = pd.Series(True, index=matched.index)
                                 if age_min is not None:
                                     age_condition &= age_values >= age_min
