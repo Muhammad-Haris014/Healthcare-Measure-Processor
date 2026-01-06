@@ -6169,13 +6169,66 @@ MEASURE_CONFIGS = {
 ,
               "requires_icd": True  # Set to False if Measure 236 needs ONLY CPT (not ICD)
     },
+
+
+        "Measure 039": {
+        "cpt_list":[
+    "97161", "97162", "97163", "97164", "97165",
+    "97166", "97167", "97168", "98000", "98001",
+    "98002", "98003", "98004", "98005", "98006",
+    "98007", "98008", "98009", "98010", "98011",
+    "98012", "98013", "98014", "98015", "98016",
+    "99202", "99203", "99204", "99205", "99212",
+    "99213", "99214", "99215", "99341", "99342",
+    "99344", "99345", "99347", "99348", "99349",
+    "99350", "G0402"
+],
+                            
+        "requires_icd": False  # Set to False if Measure 236 needs ONLY CPT (not ICD)
+    },
+
+   "Measure 282": {
+        "cpt_list": [
+  "78811","78814","90791","90792","90832","90834","90837","92522","92523",
+  "92610","92611","92612","92616","96105","96112","96116","96125","96130",
+  "96132","96136","96138","96146","96156","96158","96164","96167","96170",
+  "97161","97162","97163","97164","97165","97166","97167","97168",
+  "98000","98001","98002","98003","98004","98005","98006","98007","98008",
+  "98009","98010","98011","98012","98013","98014","98015",
+  "99202","99203","99204","99205","99211","99212","99213","99214","99215",
+  "99221","99222","99223","99231","99232","99233","99238","99239",
+  "99242","99243","99244","99245","99252","99253","99254","99255",
+  "99304","99305","99306","99307","99308","99309","99310",
+  "99341","99342","99344","99345","99347","99348","99349","99350",
+  "99424","99426","99487","99490","99491","99497",
+  "A9586","A9601","Q9982","Q9983"
+]
+
+        ,
+        "icd_list":[
+  "A52.17","A81.00","A81.01","A81.89","F01.50","F01.511","F01.518","F01.52",
+  "F01.53","F01.54","F01.A0","F01.A11","F01.A18","F01.A2","F01.A3","F01.A4",
+  "F01.B0","F01.B11","F01.B18","F01.B2","F01.B3","F01.B4","F01.C0","F01.C11",
+  "F01.C18","F01.C2","F01.C3","F01.C4","F02.80","F02.811","F02.818","F02.82",
+  "F02.83","F02.84","F02.A0","F02.A11","F02.A18","F02.A2","F02.A3","F02.A4",
+  "F02.B0","F02.B11","F02.B18","F02.B2","F02.B3","F02.B4","F02.C0","F02.C11",
+  "F02.C18","F02.C2","F02.C3","F02.C4","F03.90","F03.911","F03.918","F03.92",
+  "F03.93","F03.94","F03.A0","F03.A11","F03.A18","F03.A2","F03.A3","F03.A4",
+  "F03.B0","F03.B11","F03.B18","F03.B2","F03.B3","F03.B4","F03.C0","F03.C11",
+  "F03.C18","F03.C2","F03.C3","F03.C4","F10.27","G30.0","G30.1","G30.8",
+  "G30.9","G31.01","G31.09","G31.83","G31.85","G31.89","G94"
+],
+              "requires_icd": True  # Set to False if Measure 236 needs ONLY CPT (not ICD)
+    },
+
+
 }
 
 # Age rules (min/max) per measure
 AGE_RULES = {
     "Measure 047": {"age_min": 65, "age_max": None},
     "Measure 130": {"age_min": None, "age_max": None},
-    "Measure 001": {"age_min": 18, "age_max": 75},
+    "Measure 001": {"age_min": 18, "age_max": 85},
     "Measure 226": {"age_min": 18, "age_max": None},
     "Measure 222": {"age_min": 14, "age_max": None},
     "Measure 217": {"age_min": 14, "age_max": None},
@@ -6214,6 +6267,8 @@ AGE_RULES = {
     "Measure 288": {"age_min": None, "age_max": None},
     "Measure 419": {"age_min": None, "age_max": None},
     "Measure 331": {"age_min": 18, "age_max": None},
+    "Measure 039": {"age_min": 65, "age_max": 85},
+    "Measure 282": {"age_min": None, "age_max": None},
 }
 
 # Inject age rules into MEASURE_CONFIGS
@@ -6614,7 +6669,7 @@ with col2:
     st.subheader("⚙️ Step 2: Select Measure(s)")
     measures = st.multiselect(
         "Choose one or more measures to process",
-        options=["Measure 047", "Measure 130", "Measure 226", "Measure 001", "Measure 222", "Measure 217", "Measure 218", "Measure 219", "Measure 220", "Measure 221", "Measure 238", "Measure 317", "Measure 277", "Measure 279","Measure 236","Measure 354","Measure 355","Measure 356","Measure 357","Measure 358","Measure 126","Measure 127","Measure 006","Measure 134","Measure 141","Measure 181","Measure 182","Measure 191","Measure 117","Measure 291","Measure 293","Measure 389","Measure 374","Measure 431","Measure 048","Measure 331","Measure 286","Measure 326","Measure 288","Measure 419","Measure 331"],
+        options=["Measure 047", "Measure 130", "Measure 226", "Measure 001", "Measure 222", "Measure 217", "Measure 218", "Measure 219", "Measure 220", "Measure 221", "Measure 238", "Measure 317", "Measure 277", "Measure 279","Measure 236","Measure 354","Measure 355","Measure 356","Measure 357","Measure 358","Measure 126","Measure 127","Measure 006","Measure 134","Measure 141","Measure 181","Measure 182","Measure 191","Measure 117","Measure 291","Measure 293","Measure 389","Measure 374","Measure 431","Measure 048","Measure 331","Measure 286","Measure 326","Measure 288","Measure 419","Measure 331","Measure 039","Measure 282"],
         help="Select one or more measure types to apply. Results will be exported to separate sheets in one Excel file."
     )
     
@@ -6792,5 +6847,4 @@ st.markdown(
     '</div>',
     unsafe_allow_html=True
 )
-
 
