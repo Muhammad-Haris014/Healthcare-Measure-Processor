@@ -6229,7 +6229,7 @@ AGE_RULES = {
     "Measure 047": {"age_min": 65, "age_max": None},
     "Measure 130": {"age_min": None, "age_max": None},
     "Measure 001": {"age_min": 18, "age_max": 75},
-    "Measure 226": {"age_min": 18, "age_max": None},
+    "Measure 226": {"age_min": 12, "age_max": None},
     "Measure 222": {"age_min": 14, "age_max": None},
     "Measure 217": {"age_min": 14, "age_max": None},
     "Measure 218": {"age_min": 14, "age_max": None},
@@ -6847,5 +6847,6 @@ st.markdown(
     '</div>',
     unsafe_allow_html=True
 )
+
 
 
