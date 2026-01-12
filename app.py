@@ -157,7 +157,7 @@ MEASURE_CONFIGS = {
             "G2251", "G2252"
         ],
         "requires_icd": False,
-        "age_min": 18
+        "age_min": 12
     },
     "Measure 001": {
         "cpt_list": [
@@ -6847,6 +6847,7 @@ st.markdown(
     '</div>',
     unsafe_allow_html=True
 )
+
 
 
 
