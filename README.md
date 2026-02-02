@@ -17,7 +17,7 @@ The Healthcare Measure Processor enables users to securely upload, process, and 
 - **Brute-force protection:** Configurable lockout after multiple failed logins
 - **Session management:** Persistent authentication during app usage
 - **Admin security panel:** Manage failed attempts, credentials, and see session info
-- **Default credentials (for development):** `admin` / `admin123` _(must be changed for production!)_
+
 
 ---
 
